@@ -1,5 +1,4 @@
-
-# Work IQ MCP — Guia de Habilitação para Microsoft 365
+# 🤖 Work IQ MCP — Guia de Habilitação para Microsoft 365
 
 > **Repositório de referência em português** para habilitação do Microsoft Work IQ CLI e MCP Servers no ambiente corporativo Microsoft 365.  
 > Baseado em: [microsoft/work-iq](https://github.com/microsoft/work-iq) • Modelo: [AzureBrasil-cloud](https://github.com/AzureBrasil-cloud)
