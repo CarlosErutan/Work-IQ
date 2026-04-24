@@ -1,166 +1,220 @@
-# 🤖 Work IQ MCP — Guia de Habilitação para Microsoft 365
+# 🧠 Work IQ — Do Zero à Execução
 
-> **Repositório de referência em português** para habilitação do Microsoft Work IQ CLI e MCP Servers no ambiente corporativo Microsoft 365.  
-> Baseado em: [microsoft/work-iq](https://github.com/microsoft/work-iq) • Modelo: [AzureBrasil-cloud](https://github.com/AzureBrasil-cloud)
-
----
-
-## 📋 O que é o Work IQ?
-
-O **Microsoft Work IQ** é uma CLI e um servidor MCP (Model Context Protocol) que conecta assistentes de IA aos seus dados do Microsoft 365 Copilot. Com ele, você pode consultar e-mails, reuniões, documentos, mensagens do Teams e insights corporativos usando **linguagem natural**.
-
-```
-"Quais reuniões tenho amanhã?"
-"Resuma os e-mails da Sarah sobre o orçamento"
-"Encontre documentos em que trabalhei ontem"
-```
-
-> ⚠️ **Public Preview**: Recursos e APIs podem mudar.  
-> Requer licença **Microsoft 365 Copilot** (add-on).
+> ⚠️ **Public Preview** — Funcionalidades e APIs podem mudar. Requer licença **Microsoft 365 Copilot add-on**. Este documento reúne documentação oficial, repositórios, passo a passo completo e demos originais.
+> 
 
 ---
 
-## 🗺️ Índice
+# O que é o Work IQ
 
-1. [Pré-requisitos](#-pré-requisitos)
-2. [Caminho Admin: Habilitar Frontier + Consentimento](#-caminho-admin-habilitar-frontier--consentimento)
-3. [Instalação da CLI](#-instalação-da-cli)
-4. [Configuração dos MCP Servers](#-configuração-dos-mcp-servers)
-5. [Uso no GitHub Copilot CLI](#-uso-no-github-copilot-cli)
-6. [Uso no VS Code](#-uso-no-vs-code)
-7. [Scripts de Habilitação (Admin)](#-scripts-de-habilitação-admin)
-8. [Demos e Exemplos](#-demos-e-exemplos)
-9. [Troubleshooting](#-troubleshooting)
+O **Microsoft Work IQ** é a camada de inteligência que conecta assistentes de IA aos dados do Microsoft 365 Copilot. Ele expõe e-mails, reuniões, documentos, mensagens do Teams e insights organizacionais via **Model Context Protocol (MCP),** o mesmo protocolo aberto que ferramentas como Claude, VS Code e GitHub Copilot utilizam.
 
----
+A arquitetura do Work IQ opera em **três camadas integradas**:
 
-## ✅ Pré-requisitos
+- **Data:** Indexação semântica de e-mails, docs, chats, arquivos (SharePoint, OneDrive, Outlook, Teams)
+- **Memory:** Contexto persistente: prioridades, padrões de colaboração, histórico de trabalho
+- **Inference:** Modelos de linguagem + MCP tools + agentes — raciocínio e ação sobre os dados
 
-| Requisito | Detalhe |
-|-----------|---------|
-| Licença M365 Copilot | Obrigatório — sem ela o Work IQ não funciona |
-| Node.js ≥ 18 | Inclui NPM e NPX |
-| Conta GitHub Copilot | Para uso via GitHub Copilot CLI |
-| Permissão Admin (tenant) | Para consentir as permissões MCP |
-| PowerShell 7+ | Para executar os scripts de habilitação |
-
-### Instalar Node.js
-```bash
-# Windows (winget)
-winget install OpenJS.NodeJS.LTS
-
-# macOS (brew)
-brew install node
-
-# Linux (Ubuntu/Debian)
-curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
-sudo apt-get install -y nodejs
-```
+> 💡 O Work IQ **nativo é somente leitura** (Read-Only). Ele foi projetado para dar **contexto** à IA, não para atuar como orquestrador de automação que altera recursos no tenant. Para operações de escrita (PATCH/POST), é necessário construir um Plugin Executor MCP customizado que será explicado em outra pagina.
+> 
 
 ---
 
-## 🛡️ Caminho Admin: Habilitar Frontier + Consentimento
+# Pré-requisitos
 
-> Esta seção é para **Administradores do Tenant M365**. Se você não for admin, envie este link ao seu administrador.
+## Obrigatórios
 
-### Passo 1 — Habilitar o Programa Frontier (Microsoft 365 Admin Center)
+- **Licença Microsoft 365 Copilot add-on** — sem ela, toda chamada retorna `Access Denied`
+- **Node.js ≥ 18** instalado https://nodejs.org/
 
-O Work IQ MCP faz parte das funcionalidades de **pré-visualização do Frontier** da Microsoft.
+<aside>
+💡
 
-1. Acesse [admin.microsoft.com](https://admin.microsoft.com)
-2. Navegue até **Configurações → Configurações da Organização → Serviços**
-3. Procure por **Microsoft 365 Insider (Frontier)**
-4. Habilite o programa para os usuários desejados
+**Por que Node.js?** O WorkIQ usa NPX para rodar o servidor MCP. O NPX vem automaticamente junto com o NPM, que vem acompanhado de Node.js.
 
-> 📌 Sem o Frontier ativo, os MCP Servers do Work IQ não aparecerão no catálogo do Copilot Studio.
+</aside>
 
-### Passo 2 — Consentimento Rápido (URL de 1 clique)
+- **Permissão de Administrador no tenant** — necessária para o Admin Consent (pode ser Global Admin, Cloud Application Admin ou Application Admin)
+- **Programa Frontier habilitado** no tenant — os MCP Servers do Work IQ fazem parte da pré-visualização do Frontier
 
-Use a URL de consentimento rápido para aprovar todas as permissões necessárias:
+## Opcionais (ampliam as capacidades)
+
+- **GitHub Copilot CLI** — para usar Work IQ como plugin no terminal
+- **VS Code + extensão GitHub Copilot** — para usar Work IQ como MCP server no editor
+- **Copilot Studio** — para criar agentes low-code com MCP
+- **Azure AI Foundry** — para desenvolvimento pro-code de agentes
+- **PowerShell 7+** — para executar os scripts de habilitação do tenant
+
+---
+
+# Documentações Oficiais
+
+- [Microsoft Work IQ CLI (preview) — Microsoft Learn](https://learn.microsoft.com/en-us/microsoft-365/copilot/extensibility/workiq-overview)
+- [Work IQ MCP Overview — Microsoft Agent 365](https://learn.microsoft.com/en-us/microsoft-agent-365/tooling-servers-overview)
+- [Work IQ no Copilot Studio — Microsoft Learn](https://learn.microsoft.com/en-us/microsoft-copilot-studio/use-work-iq)
+- [Admin Instructions —](https://github.com/microsoft/work-iq/blob/main/ADMIN-INSTRUCTIONS.md) [ADMIN-INSTRUCTIONS.md](http://ADMIN-INSTRUCTIONS.md)
+- [User and Admin Consent Overview — Microsoft Entra](https://learn.microsoft.com/en-us/entra/identity/enterprise-apps/user-admin-consent-overview)
+- [Model Context Protocol — Spec oficial](https://modelcontextprotocol.io/)
+
+---
+
+# Repositórios de Referência
+
+## Repo WorkIQ Oficial
+
+> Repositório oficial Microsoft: [microsoft/work-iq](https://github.com/microsoft/work-iq)
+> 
+
+|  | `microsoft/work-iq` |
+| --- | --- |
+| **O que é** | CLI + MCP server + plugins prontos |
+| **Público-alvo** | Usuários e devs que usam a CLI |
+| **Linguagens** | TypeScript/Node.js (NPM package) |
+| **Autenticação** | Automática via credenciais M365 |
+| **API usada** | Abstrai via MCP (`ask_work_iq`) |
+| **Quando usar** | Usar Work IQ no dia a dia |
+
+## microsoft/work-iq — Estrutura de pastas
 
 ```
-https://login.microsoftonline.com/common/adminconsent?client_id=<WORK_IQ_APP_ID>
+microsoft/work-iq/
+├── scripts/
+│   ├── Enable-WorkIQToolsForTenant.ps1   ← habilita MCPs + admin consent no tenant
+│   └── Verify-WorkIQSetup.ps1            ← diagnóstico somente leitura
+├── plugins/
+│   ├── workiq/                           ← plugin principal
+│   │   ├── .mcp.json                     ← config do servidor MCP
+│   │   └── skills/workiq/SKILL.md        ← define quando/como usar a tool ask_work_iq
+│   ├── workiq-productivity/              ← insights de produtividade
+│   │   ├── email-analytics               ← triagem e análise de e-mails
+│   │   ├── meeting-cost-analyzer         ← custo de reuniões em horas/pessoa
+│   │   ├── org-chart                     ← mapa hierárquico da organização
+│   │   └── channel-audit                 ← auditoria de canais do Teams
+│   └── microsoft-365-agents-toolkit/     ← scaffolding de agentes declarativos
+├── server.json                           ← definição do MCP server (npm package)
+├── README.md
+├── ADMIN-INSTRUCTIONS.md                 ← guia completo para admins
+└── PLUGINS.md                            ← catálogo completo de plugins
 ```
 
-> O App ID do Work IQ CLI está documentado em [ADMIN-INSTRUCTIONS.md](./docs/ADMIN-INSTRUCTIONS.md).
+---
 
-### Passo 3 — Executar Script de Habilitação PowerShell
+# Passo a Passo Completo
 
-Se o consentimento rápido falhar (erro `AADSTS650052`), execute o script:
+## Fase 1 — Admin: Preparar o Tenant
+
+### 1. Verificar licenças
+
+Acesse `admin.microsoft.com → Licenças` e confirme que os usuários têm a licença **Microsoft 365 Copilot add-on** atribuída.
+
+> ⏱️ Após atribuir a licença, aguarde até **24 horas** para propagação completa.
+> 
+
+### 2. Habilitar o Programa Frontier
+
+1. Acesse [admin.microsoft.com](http://admin.microsoft.com)
+2. Navegue até **Copilot → Copilot Frontier → Serviços**
+3. Ative para os usuários ou grupos desejados
+
+[Explore o acesso antecipado à IA no Microsoft 365 | Microsoft Frontier](https://www.microsoft.com/pt-br/microsoft-365-copilot/frontier-program)
+
+![image.png](image.png)
+
+![image.png](image%201.png)
+
+> 💡 Sem o Frontier, os MCP Servers do Work IQ **não aparecem** no catálogo do Copilot Studio.
+> 
+
+### 3. Fazer o Admin Consent
+
+**Opção A — Script PowerShell (recomendado):**
+
+Se preferir pode copiar o script completo direto da pasta “Script” do repositório.
 
 ```powershell
-# Pré-requisito
+# Instalar módulo (se necessário)
 Install-Module Microsoft.Graph -Scope CurrentUser
 
-# Executar script de habilitação
-.\scripts\Enable-WorkIQToolsForTenant.ps1
+# Instalar o GIT (se necessário)
+winget install --id Git.Git -e --source winget
+
+# Clonar o repositório oficial
+git clone https://github.com/microsoft/work-iq.git
+cd work-iq/scripts
+
+# Executar habilitação
+.\Enable-WorkIQToolsForTenant.ps1
+
+# Verificar resultado
+.\Verify-WorkIQSetup.ps1
 ```
 
-O script irá:
-- Criar os Service Principals dos MCP Servers no seu tenant
-- Conceder admin consent para todas as permissões necessárias
-- Verificar a configuração do Microsoft 365 Copilot
+![image.png](image%202.png)
 
-### Passo 4 — Gerenciar MCP no Admin Center
+![image.png](image%203.png)
 
-Após a habilitação:
-1. Acesse [admin.microsoft.com](https://admin.microsoft.com)
-2. Navegue até **Agentes e Ferramentas**
-3. Visualize e gerencie os MCP Servers ativos:
-   - Work IQ Mail
-   - Work IQ Calendar
-   - Work IQ Teams
-   - Work IQ OneDrive / SharePoint
-4. Permita ou bloqueie servidores por política organizacional
+O script cria automaticamente os Service Principals: Work IQ Tools, Mail, Calendar, Teams, OneDrive, SharePoint, Word, Admin, Me e M365 Copilot.
+
+**Opção B — URL de consentimento rápido (1 clique):**
+
+```
+https://login.microsoftonline.com/SEU_TENANT_ID/adminconsent?client_id=SEU_CLIENT_ID
+```
+
+> ⚠️ Se esta URL retornar `AADSTS650052`, o Service Principal não foi provisionado. Use o script PowerShell.
+> 
+
+### 4. Gerenciar MCP Servers no Admin Center
+
+1. Acesse `admin.microsoft.com → Agentes e Ferramentas`
+2. Visualize todos os MCP Servers ativos
+3. Use **Permitir** / **Bloquear** por política organizacional
+
+![image.png](image%204.png)
 
 ---
 
-## 💻 Instalação da CLI
+## Fase 2 — Usuário/Dev: Instalação
 
-### Opção A: Via GitHub Copilot CLI (Recomendada)
+### Opção A — GitHub Copilot CLI (mais rápida)
 
 ```bash
-# 1. Abra o GitHub Copilot CLI
+# 1. Abrir o GitHub Copilot CLI
 copilot
 
-# 2. Adicionar o marketplace de plugins (uma única vez)
+# 2. Adicionar marketplace (uma única vez)
 /plugin marketplace add microsoft/work-iq
 
-# 3. Instalar os plugins Work IQ
+# 3. Instalar os plugins
 /plugin install workiq@work-iq
 /plugin install workiq-productivity@work-iq
 /plugin install microsoft-365-agents-toolkit@work-iq
 
-# 4. Aceitar os termos de uso (obrigatório)
+# 4. Aceitar EULA (obrigatório na primeira vez)
 workiq accept-eula
 ```
 
-### Opção B: Instalação Global via NPM
+![image.png](image%205.png)
+
+### Opção B — NPM global
 
 ```bash
-# Instalar globalmente
 npm install -g @microsoft/workiq
-
-# Aceitar EULA
 workiq accept-eula
-
-# Testar
-workiq ask -q "Quais reuniões tenho hoje?"
 ```
 
-### Opção C: Uso direto com NPX (sem instalação)
+### Opção C — NPX sem instalação
 
 ```bash
-npx -y @microsoft/workiq@latest ask -q "Quais reuniões tenho hoje?"
+npx -y @microsoft/workiq@latest ask -q "Sua pergunta aqui"
+
 ```
 
----
+ Diferente do **npm** (que instala pacotes), o **npx** (Node Package Execute) serve para executar pacotes. Ele vai na internet, baixa o código do **Work IQ** para uma **pasta temporária em cache,** roda o comando e pronto.
 
-## ⚙️ Configuração dos MCP Servers
+### Opção D — VS Code (configuração manual)
 
-### VS Code — settings.json
-
-Adicione ao seu `settings.json` do VS Code:
+Adicione ao seu `settings.json`:
 
 ```json
 {
@@ -174,108 +228,134 @@ Adicione ao seu `settings.json` do VS Code:
 }
 ```
 
-Arquivo de configuração pronto: [`mcp-configs/vscode-settings.json`](./mcp-configs/vscode-settings.json)
-
-### Claude Desktop / Cursor / Outros Clientes MCP
-
-```json
-{
-  "mcpServers": {
-    "workiq": {
-      "command": "npx",
-      "args": ["-y", "@microsoft/workiq@latest", "mcp"],
-      "tools": ["*"]
-    }
-  }
-}
-```
-
-Arquivo de configuração pronto: [`mcp-configs/mcp-config.json`](./mcp-configs/mcp-config.json)
-
 ---
 
-## 🐙 Uso no GitHub Copilot CLI
+## Fase 3 — Uso Diário
 
-Após instalar os plugins:
+### Comandos disponíveis
+
+| Comando | Descrição |
+| --- | --- |
+| `workiq accept-eula` | Aceitar EULA (obrigatório na primeira vez) |
+| `workiq ask` | Modo interativo — chat direto no terminal |
+| `workiq ask -q "pergunta"` | Pergunta direta sem modo interativo |
+| `workiq ask -t "tenant-id" -q "pergunta"` | Especificar tenant manualmente |
+| `workiq mcp` | Iniciar servidor MCP (para agentes, não para humanos) |
+| `workiq version` | Exibir versão instalada |
+
+### workiq ask [options]
+
+| **Opção Curta** | **Opção Longa** | **Parâmetro Esperado** | **Descrição** |
+| --- | --- | --- | --- |
+| `-q` | `--question` | `<question>` | A pergunta em linguagem natural que você deseja fazer ao agente de IA. |
+| `-f` | `--file-urls` | `<file-urls>` | URLs de arquivos específicos do OneDrive ou SharePoint para forçar a IA a usá-los como contexto raiz. |
+| `-v` | `--verbose` | Nenhum | Habilita a saída de log detalhada, exibindo o `request-id` e o `conversation ID` para fins de troubleshooting e auditoria.[default: False] |
+| `-d` | `--developer` | Nenhum | Ativa o modo de desenvolvedor, que pode expor payloads JSON brutos ou comportamentos de depuração internos.[default: False] |
+| `-?, -h` | `--help` | Nenhum | Exibe o menu de ajuda nativo no terminal com a lista de comandos. |
+
+### Exemplos de Pergunta
 
 ```bash
-# Modo interativo
-copilot
+# Calendário
+workiq ask -q "Quais reuniões tenho hoje?"
+workiq ask -q "Qual é o custo em horas das minhas reuniões recorrentes desta semana?"
 
-# Exemplos de perguntas
-"Quais são minhas próximas reuniões esta semana?"
-"Resuma os e-mails não lidos de hoje"
-"Encontre documentos sobre o projeto X"
-"Quem são meus subordinados diretos?"
-"Qual é o custo desta reunião recorrente?"
+# E-mails
+workiq ask -q "Resuma os e-mails não lidos de hoje por prioridade"
+workiq ask -q "Existe algum e-mail do projeto X aguardando minha resposta?"
+
+# Documentos
+workiq ask -q "Encontre documentos que trabalhei nos últimos 3 dias"
+workiq ask -q "Qual é o conteúdo da especificação do projeto Y no SharePoint?"
+
+# Pessoas e organização
+workiq ask -q "Quem é meu gestor?"
+workiq ask -q "Quais são meus subordinados diretos?"
+workiq ask -q "Quem está trabalhando no Projeto Alpha?"
+
+# Teams
+workiq ask -q "Resuma as mensagens de hoje no canal de Engenharia"
 ```
 
----
+# Testes Realizados
 
-## 💡 Uso no VS Code
+Avaliação minuciosa para tomada de decisão:
 
-1. Abra o VS Code com a extensão GitHub Copilot instalada
-2. Clique no ícone 🔧 **Ferramentas** no painel do Copilot Chat
-3. Ative o servidor **workiq**
-4. Faça perguntas diretamente no chat do Copilot
+```jsx
+workiq ask -q "quais e-mails na minha caixa são irrelevantes e poderiam ser excluidos?”
+```
 
----
+![image.png](image%206.png)
 
-## 📁 Scripts de Habilitação (Admin)
+![image.png](image%207.png)
 
-| Script | Descrição |
-|--------|-----------|
-| [`Enable-WorkIQToolsForTenant.ps1`](./scripts/Enable-WorkIQToolsForTenant.ps1) | Habilita todos os MCP Servers e concede admin consent |
-| [`Verify-WorkIQSetup.ps1`](./scripts/Verify-WorkIQSetup.ps1) | Verifica se a configuração está correta (somente leitura) |
-| [`setup-workiq-cli.sh`](./scripts/setup-workiq-cli.sh) | Instala a CLI Work IQ no Linux/macOS |
-| [`setup-workiq-cli.ps1`](./scripts/setup-workiq-cli.ps1) | Instala a CLI Work IQ no Windows |
+Listagem de acessos:
 
----
+```jsx
+workiq ask -q "me liste os sites aos quais meu usuário tem acesso”
+```
 
-## 🎮 Demos e Exemplos
+![image.png](image%208.png)
 
-| Demo | Descrição |
-|------|-----------|
-| [`demos/install-mcp-frontier.md`](./demos/install-mcp-frontier.md) | Walkthrough completo: Frontier → Admin Consent → MCP no Copilot Studio |
-| [`demos/github-copilot-cli.md`](./demos/github-copilot-cli.md) | Exemplos de uso no GitHub Copilot CLI |
-| [`demos/vscode-integration.md`](./demos/vscode-integration.md) | Configuração e uso no VS Code |
+Esse teste é extremamente importante porque apresenta algo extremamente relevante, o workIQ trabalha aprendendo e analisando dados e conexões ativas, ele não é o **Microsoft Graph** que vê todas as configurações do seu ambiente. Como o sistema está sempre se comunicando com o usuário isso pode gerar confusão mas é possível ver a limitação quando a ação que parte do usuário não foi realizada.
 
 ---
 
-## 🔧 Troubleshooting
+# Entendendo os Modos de Execução
 
-### Erro: `AADSTS650052`
-O Service Principal do Work IQ Tools não foi provisionado no tenant.
-**Solução**: Execute o script `Enable-WorkIQToolsForTenant.ps1`
+## workiq ask — Para humanos no terminal
 
-### Erro: `Access Denied` no consentimento
-Você não tem permissão de admin.
-**Solução**: Contate um Global Admin, Cloud Application Admin ou Application Admin.
+```bash
+workiq ask
+# Abre um chat interativo onde você digita perguntas em linguagem natural
+# IMPORTANTE: apenas leitura — não cria, altera ou exclui dados
+```
 
-### MCP não aparece no Copilot Studio
-O programa Frontier pode não estar ativo.
-**Solução**: Habilite via **Admin Center → Configurações → Microsoft 365 Insider**
+## workiq mcp — Para agentes de IA (não para humanos diretamente)
 
-### Dados do M365 não retornam
-O Work IQ requer licença M365 Copilot ativa.
-**Solução**: Verifique em [admin.microsoft.com](https://admin.microsoft.com) se a licença está atribuída.
+Quando você executa `workiq mcp`, o cursor fica piscando porque **o processo virou um servidor de fundo**. Ele não espera você digitar — ele está de portas abertas esperando que um **software cliente** (Claude Desktop, VS Code, Azure AI Foundry) mande comandos em formato JSON-RPC.
+
+**Fluxo correto de uso com agente:**
+
+```
+Você (interface do agente)
+    ↓ "Quais reuniões tenho amanhã?"
+Agente de IA (Claude / Azure AI / Copilot Studio)
+    ↓ chama internamente: workiq mcp (em background)
+    ↓ envia JSON: {"method": "tools/call", "params": {"name": "ask_work_iq", "arguments": {...}}}
+Work IQ MCP Server
+    ↓ autentica com Microsoft Entra
+    ↓ consulta Microsoft Graph API
+    ↓ retorna resultado em JSON
+Agente de IA
+    ↓ formata a resposta
+Você ← resposta legível
+```
+
+> 💡 **Resumo:** Você nunca digita comandos diretamente depois de rodar `workiq mcp`. Esse comando vai em um arquivo de **configuração do agente** (`.mcp.json`, `settings.json`, `mcp-config.json`) para que o agente saiba como iniciar a "ponte" quando precisar.
+> 
 
 ---
 
-## 📚 Referências
+# Segurança e Governança
 
-- [Microsoft Work IQ — Repositório Oficial](https://github.com/microsoft/work-iq)
-- [Work IQ CLI — Microsoft Learn](https://learn.microsoft.com/en-us/microsoft-365/copilot/extensibility/workiq-overview)
-- [Work IQ MCP Overview — Microsoft Learn](https://learn.microsoft.com/en-us/microsoft-agent-365/tooling-servers-overview)
-- [Work IQ Admin Instructions](https://github.com/microsoft/work-iq/blob/main/ADMIN-INSTRUCTIONS.md)
-- [AzureBrasil Cloud](https://github.com/AzureBrasil-cloud)
+A principal premissa do Work IQ é o respeito absoluto à governança do *tenant*. Ele opera no modelo **Delegated Permissions**.
+
+Isso significa que o Work IQ e os servidores MCP customizados **nunca** ganham acesso global irrestrito aos dados. Eles assumem a identidade do usuário conectado (via Token Oauth/JWT). Se o usuário não tem permissão para ler a caixa postal do CEO no Outlook, a IA também não terá. As políticas de Acesso Condicional (MFA, conformidade de dispositivo) configuradas no Microsoft Entra ID são aplicadas de ponta a ponta na geração do token.
+
+- **Sem armazenamento:** Nenhum dado do M365 é armazenado — tudo é recuperado sob demanda
+- **Admin visibility:** Admins visualizam e controlam todo uso via Admin Center → Agentes e Ferramentas
+- **Auditoria:** Acesse Microsoft Defender → Advanced Hunting para inspecionar logs de chamadas MCP
+- **Tokens JWT:** Nunca armazene tokens em código, repositórios ou documentos. Eles expiram em ~1 hora e devem ser tratados como senhas
 
 ---
 
-## 🤝 Contribuindo
+> 
+> 
 
-PRs são bem-vindos! Veja [`CONTRIBUTING.md`](./CONTRIBUTING.md) para detalhes.
+[Demos](Demos%2034b0871b007e806ea17ac95baff0aacd.md)
 
+[Plugin Executor MCP](Plugin%20Executor%20MCP%2034b0871b007e80e6ad7dc9f234432a70.md)
 ---
 
 > **Aviso**: Este repositório é uma referência comunitária em português. Não é afiliado oficialmente à Microsoft.  
