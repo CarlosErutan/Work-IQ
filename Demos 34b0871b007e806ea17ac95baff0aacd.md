@@ -1,0 +1,128 @@
+# Demos
+
+# 5 Demos Originais
+
+## Demo 1 — Radar de Semana (Briefing Executivo)
+
+**Objetivo:** Toda segunda-feira de manhã, o agente compila automaticamente um briefing completo da semana.
+
+```bash
+workiq ask -q "Crie um briefing executivo da minha semana: liste reuniões agendadas, e-mails prioritários não lidos, documentos modificados nos últimos 3 dias e calcule o custo total em horas de todas as reuniões desta semana"
+```
+
+**Output esperado:** Resumo em 5-10 linhas com reuniões, e-mails críticos, docs relevantes e ROI em horas.
+
+---
+
+## Demo 2 — Onboarding Inteligente de Novo Colaborador
+
+**Objetivo:** Gerar um guia personalizado de onboarding baseado nos dados reais do tenant, sem documentação manual.
+
+```bash
+workiq ask -q "Sou novo no time de [ÁREA]. Com base nos e-mails, documentos e canais do Teams, me diga: quais são as pessoas-chave que devo conhecer, quais projetos estão ativos, quais documentos devo ler primeiro e quais foram as decisões importantes dos últimos 30 dias"
+```
+
+**Diferencial:** Completamente contextual, atualizado em tempo real, sem depender de wikis desatualizadas.
+
+---
+
+## Demo 3 — Auditor de Reuniões Desnecessárias
+
+**Objetivo:** Identificar reuniões recorrentes que poderiam ser e-mails e calcular o custo mensal em horas perdidas.
+
+```bash
+workiq ask -q "Analise minhas reuniões recorrentes dos últimos 30 dias. Para cada uma: liste participantes, duração média, frequência e se houve registro de decisões ou ações. Calcule o custo total em horas por pessoa e identifique quais poderiam ser substituídas por updates assíncronos"
+```
+
+**Output:** Relatório com ROI estimado de tempo recuperado se reuniões forem otimizadas.
+
+---
+
+## Demo 4 — Co-Autor de Pull Request Description
+
+**Objetivo:** Gerar PRs ricas em contexto de negócio usando dados reais do M365.
+
+**No VS Code (com MCP ativo), antes de abrir o PR:**
+
+```
+"Busque no Work IQ todos os e-mails, reuniões e documentos relacionados 
+à feature [NOME]. Com esse contexto, gere uma descrição de PR completa 
+incluindo: contexto de negócio, decisões técnicas tomadas, quem deve 
+revisar e o link para a spec no SharePoint"
+```
+
+**Diferencial:** A PR description referencia reuniões e specs reais — não apenas o que o código faz, mas **por que** ele foi feito assim.
+
+---
+
+## Demo 5 — Orquestração de Incidente Zero Trust
+
+**Objetivo:** Combinar Work IQ (leitura de contexto) com Plugin Executor MCP (escrita) para resposta automática a incidentes.
+
+**Passo 1 — Contexto (Work IQ):**
+
+```bash
+workiq ask -q "Quais foram as últimas atividades de login e arquivos acessados pelo usuário [EMAIL] nas últimas 24 horas?"
+```
+
+**Passo 2 — Ação (Plugin Executor, via agente):**
+
+```
+"O notebook do usuário João Silva foi roubado. Revogue imediatamente 
+todas as sessões ativas dele e adicione ao grupo de 'Acesso Suspenso'"
+```
+
+**APIs utilizadas no Plugin Executor:**
+
+```jsx
+// Revogar sessões
+POST https://graph.microsoft.com/v1.0/users/{user-id}/revokeSignInSessions
+// Permissão: User.ReadWrite.All
+
+// Adicionar ao grupo de restrição
+POST https://graph.microsoft.com/v1.0/groups/{group-id}/members/$ref
+// Permissão: Group.ReadWrite.All
+```
+
+---
+
+# Mais 3 Demos Writer (Infraestrutura)
+
+## Demo Writer 1 — Alerta de Incidente no Teams
+
+```jsx
+// Envia alerta formatado para canal do SOC/NOC
+POST https://graph.microsoft.com/v1.0/teams/{team-id}/channels/{channel-id}/messages
+// Permissão: ChannelMessage.Send
+```
+
+## Demo Writer 2 — Revogação Zero Trust
+
+```jsx
+// Revoga todos os tokens de um usuário suspeito
+POST https://graph.microsoft.com/v1.0/users/{user-id}/revokeSignInSessions
+// Permissão: User.ReadWrite.All
+```
+
+## Demo Writer 3 — JIT Access (Just-In-Time)
+
+```jsx
+// Adiciona usuário temporariamente a grupo de segurança
+POST https://graph.microsoft.com/v1.0/groups/{group-id}/members/$ref
+// Body: {"@odata.id": "https://graph.microsoft.com/v1.0/users/{user-id}"}
+// Permissão: Group.ReadWrite.All
+```
+
+---
+
+# Troubleshooting — Erros Comuns
+
+| Erro | Causa | Solução |
+| --- | --- | --- |
+| `AADSTS650052` | Service Principal não provisionado | Execute `Enable-WorkIQToolsForTenant.ps1` |
+| `Access Denied` | Sem licença Copilot ou sem permissão admin | Verifique licença em [admin.microsoft.com](http://admin.microsoft.com) |
+| MCP não aparece no Copilot Studio | Frontier não habilitado | Ative via Admin Center → Serviços → Microsoft 365 Insider |
+| `ECONNREFUSED` no MCP Inspector | Processo foi interrompido (Ctrl+C) | Rode novamente `npx @modelcontextprotocol/inspector node index.mjs` e dê F5 no navegador |
+| `cursor piscando` após `workiq mcp` | Comportamento correto — servidor aguardando cliente | Não é erro; configure no arquivo do agente |
+| Base64 em vez de GUID no To Do/Exchange | APIs do Outlook usam IDs em Base64 | Faça um GET primeiro para obter o ID correto da pasta |
+| Erro ao criar tarefas no Planner/To Do | Licença Exchange não presente no tenant de dev | Use APIs do Entra ID para testes (não dependem de Exchange) |
